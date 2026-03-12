@@ -1,0 +1,116 @@
+.features-section {
+    padding: 7rem 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.feat-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+}
+
+.feat-orb-gold {
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.05) 0%, transparent 70%);
+    top: -15%;
+    right: -10%;
+}
+
+.feat-orb-teal {
+    width: 40vw;
+    height: 40vw;
+    background: radial-gradient(circle, rgba(20, 80, 60, 0.08) 0%, transparent 70%);
+    bottom: -10%;
+    left: -5%;
+}
+
+/* 3-col bento grid for feature cards */
+.features-float-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+/* Bento-style glass card — matching Stats cells */
+.float-card {
+    background: rgba(10, 14, 18, 0.7);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.6rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    will-change: transform, opacity;
+}
+
+/* Shine overlay from top-left */
+.float-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--shine-top);
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+}
+
+.float-card:hover {
+    border-color: rgba(201, 168, 76, 0.28);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(201, 168, 76, 0.08) inset;
+}
+
+/* Gold circle icon ring */
+.float-icon-ring {
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gold-dim);
+    border: 1px solid rgba(201, 168, 76, 0.28);
+    border-radius: 50%;
+    margin-bottom: 1.2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.float-icon {
+    font-size: 1.25rem;
+    color: var(--gold);
+}
+
+.float-body {
+    position: relative;
+    z-index: 1;
+}
+
+.float-title {
+    font-size: 0.97rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.45rem;
+}
+
+.float-desc {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.68;
+}
+
+@media (max-width: 820px) {
+    .features-float-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .features-float-grid {
+        grid-template-columns: 1fr;
+    }
+}

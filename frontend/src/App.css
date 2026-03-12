@@ -1,0 +1,32 @@
+/* App-level overrides — all design tokens live in index.css */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+
+
+/* Navbar floats above the 3D canvas */
+nav, header {
+  position: relative;
+  z-index: 10;
+}
+
+/* Every page section sits above z-index: 0 fixed canvas */
+main {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hero section needs transparent bg so the 3D canvas shows through */
+.hero {
+  background: transparent !important;
+}
