@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { RiShieldCheckLine } from 'react-icons/ri';
+import { RiShieldCheckLine, RiUserLine } from 'react-icons/ri';
 import { HiOutlineMenuAlt3, HiOutlineX } from 'react-icons/hi';
 import './Navbar.css';
 
-const links = ['Home', 'About', 'Why Us', 'How It Works', 'Upload'];
-
-export default function Navbar() {
+export default function Navbar({ token, user, navigateTo, currentPath, handleLogout }) {
     const navRef = useRef(null);
     const logoRef = useRef(null);
     const linksRef = useRef([]);
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+
+    const links = ['Home', 'Features'];
 
     useEffect(() => {
         const ctx = gsap.context(() => {
@@ -28,17 +28,28 @@ export default function Navbar() {
         const onScroll = () => setScrolled(window.scrollY > 50);
         window.addEventListener('scroll', onScroll);
         return () => { ctx.revert(); window.removeEventListener('scroll', onScroll); };
-    }, []);
+    }, [token]); // Re-run when token changes to animate the updated list
 
     const scrollTo = (id) => {
         setMenuOpen(false);
-        const el = document.getElementById(id.toLowerCase().replace(/\s+/g, '-'));
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        if (id === 'Home') {
+            if (currentPath !== '/') {
+                navigateTo('/');
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            return;
+        }
+
+        if (id === 'Features') {
+            navigateTo('/why-us');
+            return;
+        }
     };
 
     return (
         <nav ref={navRef} className={`navbar${scrolled ? ' scrolled' : ''}`}>
-            <div ref={logoRef} className="nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div ref={logoRef} className="nav-logo" onClick={() => scrollTo('Home')}>
                 <RiShieldCheckLine className="logo-icon" />
                 <span className="logo-text">PixelTruth<span className="logo-accent">AI</span></span>
             </div>
@@ -52,7 +63,23 @@ export default function Navbar() {
             </ul>
 
             <div className="nav-right">
-                <button className="nav-cta" onClick={() => scrollTo('Upload')}>Try Now</button>
+                {token ? (
+                    <>
+                        <button 
+                            className={`nav-link-btn profile-nav-btn ${currentPath === '/profile' ? 'active' : ''}`}
+                            onClick={() => { setMenuOpen(false); navigateTo('/profile'); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                        >
+                            <RiUserLine /> {user?.name?.split(' ')[0] || 'Profile'}
+                        </button>
+                        <button className="nav-cta" onClick={handleLogout}>Logout</button>
+                    </>
+                ) : (
+                    <>
+                        <button className="nav-link-btn" onClick={() => navigateTo('/login')}>Login</button>
+                        <button className="nav-cta" onClick={() => navigateTo('/signup')}>Try Now</button>
+                    </>
+                )}
                 <button className="menu-toggle" onClick={() => setMenuOpen(p => !p)}>
                     {menuOpen ? <HiOutlineX /> : <HiOutlineMenuAlt3 />}
                 </button>
@@ -62,7 +89,25 @@ export default function Navbar() {
                 {links.map(link => (
                     <button key={link} className="mobile-link" onClick={() => scrollTo(link)}>{link}</button>
                 ))}
-                <button className="nav-cta mobile-cta" onClick={() => scrollTo('Upload')}>Try Now</button>
+                <div className="mobile-auth-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem' }}>
+                    {token ? (
+                        <>
+                            <button 
+                                className="mobile-link"
+                                onClick={() => { setMenuOpen(false); navigateTo('/profile'); }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
+                            >
+                                <RiUserLine /> {user?.name || 'Profile'}
+                            </button>
+                            <button className="nav-cta mobile-cta" onClick={() => { setMenuOpen(false); handleLogout(); }}>Logout</button>
+                        </>
+                    ) : (
+                        <>
+                            <button className="mobile-link" onClick={() => { setMenuOpen(false); navigateTo('/login'); }}>Login</button>
+                            <button className="nav-cta mobile-cta" onClick={() => { setMenuOpen(false); navigateTo('/signup'); }}>Try Now</button>
+                        </>
+                    )}
+                </div>
             </div>
         </nav>
     );

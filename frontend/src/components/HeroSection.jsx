@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import './HeroSection.css';
 
-export default function HeroSection() {
+export default function HeroSection({ token, navigateTo }) {
   const line1Ref = useRef(null);
   const line2Ref = useRef(null);
   const btnRef   = useRef(null);
@@ -39,7 +39,13 @@ export default function HeroSection() {
         <div ref={btnRef} className="hero-btn-row">
           <button
             className="hero-cta-btn"
-            onClick={() => document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => {
+              if (token) {
+                document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                navigateTo('/login');
+              }
+            }}
           >
             Get Started
           </button>

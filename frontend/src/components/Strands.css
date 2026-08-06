@@ -1,0 +1,27 @@
+/* .scan-glow-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.scan-preview-wrap {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
+.scan-preview-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid rgba(201, 168, 76, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+} */
