@@ -11,6 +11,8 @@ import {
   RiInfoCardLine,
   RiPriceTag3Line
 } from 'react-icons/ri';
+import Strands from './Strands';
+import './Strands.css';
 import './UploadSection.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -31,8 +33,21 @@ export default function UploadSection({ token }) {
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState(null);
   const [error, setError] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
 
   const API_URL = 'http://localhost:5000/api';
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl('');
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -174,7 +189,7 @@ export default function UploadSection({ token }) {
   return (
     <section ref={sectionRef} className="upload-section" id="upload">
       <div className="section-inner">
-        <div ref={headRef} className="section-head">
+        <div ref={headRef} className={`section-head ${loading ? 'section-head--hidden' : ''}`}>
           <span className="section-tag">Analyze Image</span>
           <h2 className="section-title">Is your image <span className="accent">AI-generated?</span></h2>
           <p className="section-sub">Upload an image or capture a photo directly. Our AI will tell you if it's real or generated.</p>
@@ -185,16 +200,45 @@ export default function UploadSection({ token }) {
 
           {/* Loading Indicator */}
           {loading && (
-            <div className="loading-overlay" style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(10, 14, 18, 0.88)', borderRadius: 'inherit', overflow: 'hidden' }}>
-              <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '1.2rem' }}>
-                {file && (
-                  <div style={{ position: 'relative', width: '150px', height: '150px', borderRadius: '16px', overflow: 'hidden', border: '2px solid rgba(201, 168, 76, 0.3)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)' }}>
-                    <img src={URL.createObjectURL(file)} alt="Scanning preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, transparent, #41f2ff, #c9a84c, #41f2ff, transparent)', animation: 'scan 2.5s ease-in-out infinite', zIndex: 3 }}></div>
+            <div className="loading-overlay">
+              <div className="strands-bg-layer" style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '760px',
+                height: '440px',
+                pointerEvents: 'none',
+                zIndex: -1
+              }}>
+                <Strands
+                  colors={["#c9a84c", "#1a8f7a", "#41f2ff"]}
+                  count={3}
+                  speed={0.5}
+                  amplitude={1}
+                  waviness={0.6}
+                  thickness={1}
+                  glow={3.5}
+                  taper={3}
+                  spread={0.5}
+                  intensity={0.9}
+                  saturation={2}
+                  opacity={1}
+                  scale={1.05}
+                  glass={false}
+                  refraction={1}
+                  dispersion={1}
+                  glassSize={1}
+                  hueShift={0}
+                />
+              </div>
+              <div className="strands-loading-content" style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, margin: 0, padding: 0, position: 'relative', zIndex: 2 }}>
+                {previewUrl && (
+                  <div className="scanning-preview-container" style={{ margin: 0 }}>
+                    <img src={previewUrl} alt="Scanning preview" className="scanning-preview-img" />
+                    <div className="scanner-line"></div>
                   </div>
                 )}
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', margin: 0 }}>Analyzing Image Authenticity</h3>
-                <p style={{ fontSize: '0.88rem', color: 'rgba(255, 255, 255, 0.6)', margin: 0, maxWidth: '280px' }}>Scanning pixels, metadata, compression artifacts and forensic patterns...</p>
               </div>
             </div>
           )}
@@ -217,7 +261,7 @@ export default function UploadSection({ token }) {
                     </div>
                   </div>
                   <div className="alert-badge-wrap">
-                    <span className="badge-value">{prediction.confidence}%</span>
+                    <span className="badge-value">{Number(prediction.confidence).toFixed(1)}%</span>
                     <span className="badge-label label-fake">AI</span>
                   </div>
                 </div>
@@ -231,7 +275,7 @@ export default function UploadSection({ token }) {
                     </div>
                   </div>
                   <div className="alert-badge-wrap">
-                    <span className="badge-value">{100 - prediction.confidence}%</span>
+                    <span className="badge-value">{(100 - Number(prediction.confidence)).toFixed(1)}%</span>
                     <span className="badge-label label-real">REAL</span>
                   </div>
                 </div>
@@ -250,30 +294,78 @@ export default function UploadSection({ token }) {
                     Detection is probabilistic. Heavily rendered digital art, airbrush work, and AI-based editing tools can influence the result.
                   </p>
 
-                  <div className="status-badges-container">
-                    <div className="status-badge">
-                      <RiPulseLine className="badge-icon" />
-                      <span className="badge-title">AI Likelihood</span>
-                      <span className={`badge-data ${prediction.result === 'fake' ? 'red' : 'green'}`}>
-                        {prediction.result === 'fake' ? prediction.confidence : (100 - prediction.confidence).toFixed(0)}%
-                      </span>
-                    </div>
+                  <div className="metric-rings-container">
+                    {/* Card 1: AI Likelihood */}
+                    {(() => {
+                      const aiPercent = prediction.result === 'fake' ? Number(prediction.confidence) : (100 - Number(prediction.confidence));
+                      const roundedPercent = aiPercent.toFixed(1);
+                      const colorClass = prediction.result === 'fake' ? 'red' : 'green';
+                      const radius = 35;
+                      const strokeWidth = 6;
+                      const circumference = 2 * Math.PI * radius;
+                      const strokeDashoffset = circumference - (Math.min(Math.max(aiPercent, 0), 100) / 100) * circumference;
+                      return (
+                        <div className="metric-ring-card">
+                          <div className={`metric-aurora-glow glow-${colorClass}`} />
+                          <span className="metric-ring-label">AI Likelihood</span>
+                          <div className="metric-ring-wrapper">
+                            <svg width="90" height="90" viewBox="0 0 90 90" className="metric-ring-svg">
+                              <circle cx="45" cy="45" r={radius} fill="transparent" stroke="rgba(255, 255, 255, 0.05)" strokeWidth={strokeWidth} />
+                              <circle cx="45" cy="45" r={radius} fill="transparent" strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className={`metric-ring-progress stroke-${colorClass}`} transform="rotate(-90 45 45)" />
+                            </svg>
+                            <div className="metric-ring-center-val">{roundedPercent}%</div>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
-                    <div className="status-badge">
-                      <RiInfoCardLine className="badge-icon" />
-                      <span className="badge-title">Confidence</span>
-                      <span className="badge-data white">
-                        {prediction.confidence > 80 ? 'High' : prediction.confidence > 60 ? 'Medium' : 'Low'}
-                      </span>
-                    </div>
+                    {/* Card 2: Confidence */}
+                    {(() => {
+                      const confidenceVal = Number(prediction.confidence);
+                      const confidenceLevel = confidenceVal > 80 ? 'High' : confidenceVal > 60 ? 'Medium' : 'Low';
+                      const confidencePercent = confidenceLevel === 'High' ? 90 : confidenceLevel === 'Medium' ? 65 : 35;
+                      const radius = 35;
+                      const strokeWidth = 6;
+                      const circumference = 2 * Math.PI * radius;
+                      const strokeDashoffset = circumference - (confidencePercent / 100) * circumference;
+                      return (
+                        <div className="metric-ring-card">
+                          <div className="metric-aurora-glow glow-gold" />
+                          <span className="metric-ring-label">Confidence</span>
+                          <div className="metric-ring-wrapper">
+                            <svg width="90" height="90" viewBox="0 0 90 90" className="metric-ring-svg">
+                              <circle cx="45" cy="45" r={radius} fill="transparent" stroke="rgba(255, 255, 255, 0.05)" strokeWidth={strokeWidth} />
+                              <circle cx="45" cy="45" r={radius} fill="transparent" strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="metric-ring-progress stroke-gold" transform="rotate(-90 45 45)" />
+                            </svg>
+                            <div className="metric-ring-center-val" style={{ fontSize: '0.85rem' }}>{confidenceLevel}</div>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
-                    <div className="status-badge">
-                      <RiPriceTag3Line className="badge-icon" />
-                      <span className="badge-title">Classification</span>
-                      <span className={`badge-data ${prediction.result === 'fake' ? 'red' : 'green'}`}>
-                        {prediction.result === 'fake' ? 'Fake' : 'Real'}
-                      </span>
-                    </div>
+                    {/* Card 3: Classification */}
+                    {(() => {
+                      const colorClass = prediction.result === 'fake' ? 'red' : 'green';
+                      const radius = 35;
+                      const strokeWidth = 6;
+                      const circumference = 2 * Math.PI * radius;
+                      const strokeDashoffset = 0; // 100% filled
+                      return (
+                        <div className="metric-ring-card">
+                          <div className={`metric-aurora-glow glow-${colorClass}`} />
+                          <span className="metric-ring-label">Classification</span>
+                          <div className="metric-ring-wrapper">
+                            <svg width="90" height="90" viewBox="0 0 90 90" className="metric-ring-svg">
+                              <circle cx="45" cy="45" r={radius} fill="transparent" stroke="rgba(255, 255, 255, 0.05)" strokeWidth={strokeWidth} />
+                              <circle cx="45" cy="45" r={radius} fill="transparent" strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className={`metric-ring-progress stroke-${colorClass}`} transform="rotate(-90 45 45)" />
+                            </svg>
+                            <div className="metric-ring-center-val" style={{ fontSize: '0.85rem' }}>
+                              {prediction.result === 'fake' ? 'Fake' : 'Real'}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="result-actions">
@@ -288,83 +380,108 @@ export default function UploadSection({ token }) {
           ) : (
             /* Idle Upload Area / Camera Area */
             <>
-              {!loading && (
-                <>
-                  <div
-                    ref={dropRef}
-                    className={`drop-zone${dragOver ? ' drag-over' : ''}${file ? ' has-file' : ''}${cameraActive ? ' camera-active' : ''}`}
-                    onDrop={cameraActive ? null : onDrop}
-                    onDragOver={cameraActive ? null : onDragOver}
-                    onDragLeave={cameraActive ? null : onDragLeave}
-                    onClick={cameraActive || file ? null : () => document.getElementById('file-input').click()}
-                  >
-                    <input id="file-input" type="file" accept="image/*"
-                      style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+              <div
+                ref={dropRef}
+                className={`drop-zone${dragOver ? ' drag-over' : ''}${file ? ' has-file' : ''}${cameraActive ? ' camera-active' : ''}`}
+                style={{
+                  opacity: loading ? 0 : 1,
+                  visibility: loading ? 'hidden' : 'visible',
+                  pointerEvents: loading ? 'none' : 'auto',
+                  transition: 'opacity 0.3s ease, visibility 0.3s ease'
+                }}
+                onDrop={cameraActive ? null : onDrop}
+                onDragOver={cameraActive ? null : onDragOver}
+                onDragLeave={cameraActive ? null : onDragLeave}
+                onClick={cameraActive || file ? null : () => document.getElementById('file-input').click()}
+              >
+                <input id="file-input" type="file" accept="image/*"
+                  style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
 
-                    {cameraActive ? (
-                      <div className="camera-viewport-wrap" onClick={e => e.stopPropagation()}>
-                        <video ref={videoRef} autoPlay playsInline className="camera-video"></video>
-                      </div>
-                    ) : !file ? (
-                      <div className="drop-idle">
-                        <div className="drop-icon-wrap"><RiUploadCloud2Line className="drop-icon" /></div>
-                        <p className="drop-title">Drag and drop your file here</p>
-                        <p className="drop-sub">or click to browse</p>
-                        <div className="drop-types">
-                          <span><RiImageLine /> JPG</span>
-                          <span><RiImageLine /> PNG</span>
-                          <span><RiImageLine /> WebP / HEIC</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="drop-preview">
-                        <div className="preview-icon-wrap">
-                          {fileType === 'image' && <RiImageLine className="preview-type-icon" />}
-                          {!['image'].includes(fileType) && <RiUploadCloud2Line className="preview-type-icon" />}
-                        </div>
-                        <div className="preview-info">
-                          <p className="preview-name">{file.name}</p>
-                          <p className="preview-size">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                        </div>
-                        <button className="preview-remove" onClick={e => { e.stopPropagation(); setFile(null); }}>
-                          <RiCloseLine />
-                        </button>
-                      </div>
-                    )}
+                {cameraActive ? (
+                  <div className="camera-viewport-wrap" onClick={e => e.stopPropagation()}>
+                    <video ref={videoRef} autoPlay playsInline className="camera-video"></video>
                   </div>
+                ) : !file ? (
+                  <div className="drop-idle">
+                    <div className="drop-icon-wrap"><RiUploadCloud2Line className="drop-icon" /></div>
+                    <p className="drop-title">Drag and drop your file here</p>
+                    <p className="drop-sub">or click to browse</p>
+                    <div className="drop-types">
+                      <span><RiImageLine /> JPG</span>
+                      <span><RiImageLine /> PNG</span>
+                      <span><RiImageLine /> WebP / HEIC</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="drop-preview-thumbnail-wrap" onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '160px', height: '160px', margin: '0 auto', borderRadius: '20px', overflow: 'hidden', border: '2px solid rgba(201, 168, 76, 0.3)', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)' }}>
+                    <img src={previewUrl} alt="Upload preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button
+                      className="preview-remove"
+                      onClick={e => { e.stopPropagation(); setFile(null); }}
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        background: 'rgba(255, 80, 80, 0.85)',
+                        border: '1px solid rgba(255, 80, 80, 0.2)',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        width: '28px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.1rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                        zIndex: 10,
+                        transition: 'background var(--transition)'
+                      }}
+                    >
+                      <RiCloseLine />
+                    </button>
+                  </div>
+                )}
+              </div>
 
-                  <div className="upload-actions">
-                    {cameraActive ? (
-                      <>
-                        <button className="btn-primary" onClick={capturePhoto}>
-                          Capture Photo
-                        </button>
-                        <button className="btn-ghost" onClick={stopCamera}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : file ? (
-                      <>
-                        <button className="btn-primary" onClick={handleAnalyze}>
-                          Run AI Image Analysis
-                        </button>
-                        <button className="btn-ghost" onClick={() => setFile(null)}>
-                          Clear Image
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button className="btn-primary" onClick={() => document.getElementById('file-input').click()}>
-                          Choose File
-                        </button>
-                        <button className="btn-ghost" onClick={startCamera}>
-                          Use Camera
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
+              <div
+                className="upload-actions"
+                style={{
+                  opacity: loading ? 0 : 1,
+                  visibility: loading ? 'hidden' : 'visible',
+                  pointerEvents: loading ? 'none' : 'auto',
+                  transition: 'opacity 0.3s ease, visibility 0.3s ease'
+                }}
+              >
+                {cameraActive ? (
+                  <>
+                    <button className="btn-primary" onClick={capturePhoto}>
+                      Capture Photo
+                    </button>
+                    <button className="btn-ghost" onClick={stopCamera}>
+                      Cancel
+                    </button>
+                  </>
+                ) : file ? (
+                  <>
+                    <button className="btn-primary" onClick={handleAnalyze}>
+                      Run AI Image Analysis
+                    </button>
+                    <button className="btn-ghost" onClick={() => setFile(null)}>
+                      Clear Image
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn-primary" onClick={() => document.getElementById('file-input').click()}>
+                      Choose File
+                    </button>
+                    <button className="btn-ghost" onClick={startCamera}>
+                      Use Camera
+                    </button>
+                  </>
+                )}
+              </div>
             </>
           )}
 
