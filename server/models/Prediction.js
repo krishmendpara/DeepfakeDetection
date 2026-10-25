@@ -19,6 +19,27 @@ const PredictionSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  displayLabel: {
+    type: String,
+  },
+  explanations: [
+    {
+      concept: { type: String },
+      relevance_pct: { type: Number },
+    },
+  ],
+  heatmapUrl: {
+    type: String,
+  },
+  heatmapBase64: {
+    type: String,
+  },
+  faceCropUrl: {
+    type: String,
+  },
+  faceCropBase64: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

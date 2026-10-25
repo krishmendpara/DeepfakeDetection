@@ -3,9 +3,9 @@
     padding: 5rem 2rem 2rem;
     margin-top: 4rem;
     position: relative;
-    background: rgba(5, 10, 10, 0.75);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .footer::before {

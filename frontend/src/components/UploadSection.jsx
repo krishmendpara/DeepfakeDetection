@@ -11,8 +11,8 @@ import {
   RiInfoCardLine,
   RiPriceTag3Line
 } from 'react-icons/ri';
-import Strands from './Strands';
-import './Strands.css';
+import ExplainabilityCard from './ExplainabilityCard';
+import { motion, AnimatePresence } from 'motion/react';
 import './UploadSection.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -154,12 +154,42 @@ export default function UploadSection({ token }) {
     }, 'image/png');
   };
 
+  const abortControllerRef = useRef(null);
+
+  const handleCancel = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (loading) {
+      document.body.style.overflow = 'hidden';
+      const onKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          handleCancel();
+        }
+      };
+      window.addEventListener('keydown', onKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', onKeyDown);
+      };
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [loading, handleCancel]);
+
   // Prediction Handler
   const handleAnalyze = async () => {
     if (!file || !token) return;
     setLoading(true);
     setError('');
     setPrediction(null);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const formData = new FormData();
     formData.append('image', file);
@@ -170,7 +200,8 @@ export default function UploadSection({ token }) {
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
       const data = await res.json();
 
@@ -180,7 +211,9 @@ export default function UploadSection({ token }) {
 
       setPrediction(data);
     } catch (err) {
-      setError(err.message);
+      if (err.name !== 'AbortError') {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -198,57 +231,89 @@ export default function UploadSection({ token }) {
         {/* Main Uploader / Result Container */}
         <div className={`uploader-main-container ${loading ? 'is-loading' : ''}`}>
 
-          {/* Loading Indicator */}
-          {loading && (
-            <div className="loading-overlay">
-              <div className="strands-bg-layer" style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '760px',
-                height: '440px',
-                pointerEvents: 'none',
-                zIndex: -1
-              }}>
-                <Strands
-                  colors={["#c9a84c", "#1a8f7a", "#41f2ff"]}
-                  count={3}
-                  speed={0.5}
-                  amplitude={1}
-                  waviness={0.6}
-                  thickness={1}
-                  glow={3.5}
-                  taper={3}
-                  spread={0.5}
-                  intensity={0.9}
-                  saturation={2}
-                  opacity={1}
-                  scale={1.05}
-                  glass={false}
-                  refraction={1}
-                  dispersion={1}
-                  glassSize={1}
-                  hueShift={0}
-                />
-              </div>
-              <div className="strands-loading-content" style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, margin: 0, padding: 0, position: 'relative', zIndex: 2 }}>
-                {previewUrl && (
-                  <div className="scanning-preview-container" style={{ margin: 0 }}>
-                    <img src={previewUrl} alt="Scanning preview" className="scanning-preview-img" />
-                    <div className="scanner-line"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Zoom-in Focus View & Scanning State (dim/blur overlay + center focus) */}
+          <AnimatePresence>
+            {loading && (
+              <motion.div
+                className="scanning-overlay-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 9999,
+                  background: 'rgba(5, 10, 10, 0.75)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '1.5rem',
+                }}
+              >
+                <motion.div
+                  className="scanning-focus-modal"
+                  initial={{ scale: 0.65, opacity: 0, y: 30 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.75, opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    position: 'relative',
+                    maxWidth: '460px',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                  }}
+                >
+
+                  {previewUrl && (
+                    <div className="scanning-preview-container" style={{ width: '220px', height: '220px', marginBottom: '1.5rem' }}>
+                      <img src={previewUrl} alt="Scanning preview" className="scanning-preview-img" />
+                      <div className="scanner-line"></div>
+                      <div className="scanner-corner-tl" />
+                      <div className="scanner-corner-tr" />
+                      <div className="scanner-corner-bl" />
+                      <div className="scanner-corner-br" />
+                    </div>
+                  )}
+
+                  <h3 className="loading-title">Scanning Facial Landmarks...</h3>
+                  <p className="loading-subtitle" style={{ maxWidth: '340px' }}>
+                    Analyzing biometric textures, spatial symmetry & synthetic indicators
+                  </p>
+
+                  <button
+                    onClick={handleCancel}
+                    className="btn-ghost"
+                    style={{
+                      marginTop: '1.5rem',
+                      fontSize: '0.85rem',
+                      padding: '0.45rem 1.4rem',
+                      borderRadius: '99px',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    Cancel Analysis (Esc)
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Error Message */}
           {error && <div className="prediction-error-msg">{error}</div>}
 
           {/* Prediction Result Display */}
           {prediction ? (
-            <div className="prediction-result-card">
+            <motion.div 
+              className="prediction-result-card"
+              initial={{ opacity: 0, y: 35, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            >
 
               {/* Visual Alert Bar */}
               {prediction.result === 'fake' ? (
@@ -376,7 +441,10 @@ export default function UploadSection({ token }) {
                 </div>
               </div>
 
-            </div>
+              {/* Explainability Section */}
+              <ExplainabilityCard data={prediction} loading={false} />
+
+            </motion.div>
           ) : (
             /* Idle Upload Area / Camera Area */
             <>

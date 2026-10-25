@@ -379,7 +379,7 @@
 }
 
 .uploader-main-container.is-loading> :not(.loading-overlay) {
-    filter: blur(14px) brightness(0.6);
+    opacity: 0.35;
     pointer-events: none;
 }
 
@@ -389,6 +389,7 @@
     left: 0;
     right: 0;
     bottom: 0;
+    min-height: 440px;
     background: radial-gradient(circle at center, rgba(10, 14, 18, 0.4) 0%, transparent 80%);
     z-index: 10;
     display: flex;
@@ -396,7 +397,6 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-xl);
-    overflow: hidden;
     padding: 2rem;
     border: none;
     box-shadow: none;
@@ -407,45 +407,78 @@
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
 }
 
-.strands-bg-animation {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.75;
-}
-
-.strands-loading-content {
+.scanning-loading-content {
     position: relative;
-    z-index: 2;
+    z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
     width: 100%;
-    max-width: 400px;
+    max-width: 440px;
 }
 
 .scanning-preview-container {
     position: relative;
-    width: 160px;
-    height: 160px;
+    width: 168px;
+    height: 168px;
     border-radius: 20px;
     overflow: hidden;
-    border: 2px solid rgba(201, 168, 76, 0.3);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(201, 168, 76, 0.15);
-    margin-bottom: 2rem;
+    isolation: isolate;
+    border: 2px solid rgba(201, 168, 76, 0.45);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 30px rgba(65, 242, 255, 0.25);
+    margin-bottom: 1.5rem;
     background: #000;
+}
+
+/* Reticle Corner Brackets */
+.scanner-corner-tl,
+.scanner-corner-tr,
+.scanner-corner-bl,
+.scanner-corner-br {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.scanner-corner-tl {
+    top: 6px;
+    left: 6px;
+    border-top: 2px solid var(--cyan);
+    border-left: 2px solid var(--cyan);
+    border-top-left-radius: 6px;
+}
+
+.scanner-corner-tr {
+    top: 6px;
+    right: 6px;
+    border-top: 2px solid var(--cyan);
+    border-right: 2px solid var(--cyan);
+    border-top-right-radius: 6px;
+}
+
+.scanner-corner-bl {
+    bottom: 6px;
+    left: 6px;
+    border-bottom: 2px solid var(--cyan);
+    border-left: 2px solid var(--cyan);
+    border-bottom-left-radius: 6px;
+}
+
+.scanner-corner-br {
+    bottom: 6px;
+    right: 6px;
+    border-bottom: 2px solid var(--cyan);
+    border-right: 2px solid var(--cyan);
+    border-bottom-right-radius: 6px;
 }
 
 .scanning-preview-container::after {
@@ -462,23 +495,17 @@
 }
 
 @keyframes pulseGlow {
-
-    0%,
-    100% {
-        opacity: 0.3;
-    }
-
-    50% {
-        opacity: 0.85;
-    }
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.85; }
 }
 
 .scanning-preview-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.85;
-    filter: brightness(0.9) contrast(1.1);
+    opacity: 0.95;
+    filter: brightness(0.95) contrast(1.08);
+    display: block;
 }
 
 .scanner-line {
@@ -486,22 +513,27 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, var(--cyan-light), var(--gold-light), var(--cyan-light), transparent);
-    box-shadow: 0 0 14px 3px var(--cyan), 0 0 6px var(--gold-light);
-    animation: scan 2.5s ease-in-out infinite;
+    height: 3px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--cyan) 18%, 
+        #ffffff 50%, 
+        var(--cyan) 82%, 
+        transparent 100%
+    );
+    box-shadow: 0 0 10px 2px var(--cyan), 0 0 18px 4px rgba(65, 242, 255, 0.45);
+    animation: scan 2.2s ease-in-out infinite;
     z-index: 3;
+    pointer-events: none;
 }
 
 @keyframes scan {
     0% {
         top: 0%;
     }
-
     50% {
-        top: calc(100% - 4px);
+        top: calc(100% - 3px);
     }
-
     100% {
         top: 0%;
     }
@@ -848,12 +880,16 @@
 
 /* Section head visibility during loading */
 .section-head {
-    transition: opacity 0.35s ease;
+    transition: opacity 0.35s ease, max-height 0.35s ease, margin 0.35s ease;
 }
 
 .section-head--hidden {
     opacity: 0;
     pointer-events: none;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
 }
 
 /* Metric Circular Ring Widget Styles */

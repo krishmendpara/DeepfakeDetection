@@ -10,6 +10,7 @@ import {
   RiDeleteBinLine
 } from 'react-icons/ri';
 import SpotlightCard from './SpotlightCard';
+import ExplainabilityCard from './ExplainabilityCard';
 import './ProfileSection.css';
 
 export default function ProfileSection({ token, user, handleLogout, navigateTo }) {
@@ -289,6 +290,11 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
                       <RiDeleteBinLine /> Delete From History
                     </button>
                   </div>
+                </div>
+
+                {/* Explainability Section if available */}
+                <div className="scan-modal-xai-wrap">
+                  <ExplainabilityCard data={selectedScan} />
                 </div>
               </div>
             </div>

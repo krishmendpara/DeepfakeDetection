@@ -11,7 +11,7 @@ export default function Navbar({ token, user, navigateTo, currentPath, handleLog
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
-    const links = ['Home', 'Features'];
+    const links = token ? ['Home', 'Detect', 'Features'] : ['Home', 'Features'];
 
     useEffect(() => {
         const ctx = gsap.context(() => {
@@ -38,6 +38,11 @@ export default function Navbar({ token, user, navigateTo, currentPath, handleLog
             } else {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
+            return;
+        }
+
+        if (id === 'Detect') {
+            navigateTo('/app');
             return;
         }
 

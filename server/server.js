@@ -12,8 +12,10 @@ connectDB();
 const app = express();
 
 // Standard middleware
-app.add_middleware = app.use; // fallback or just use standard express use
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -1,133 +1,238 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import AboutSection from './components/AboutSection';
 import StatsSection from './components/StatsSection';
-import FeaturesSection from './components/FeaturesSection';
-import UploadSection from './components/UploadSection';
-import ProfileSection from './components/ProfileSection';
-import AuthPage from './components/AuthPage';
 import Footer from './components/Footer';
 import { LightRays } from './registry/magicui/light-rays';
-import { RiLockPasswordLine } from 'react-icons/ri';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { motion, AnimatePresence } from 'motion/react';
 import './App.css';
 
-export default function App() {
-  // Authentication State
-  const [token, setToken] = useState(() => {
-    const saved = localStorage.getItem('token');
-    return (saved && saved !== 'null' && saved !== 'undefined') ? saved : null;
-  });
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('user');
-      return (saved && saved !== 'null' && saved !== 'undefined') ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+// Lazy-loaded routes for performance & modularity
+const FeaturesSection = lazy(() => import('./components/FeaturesSection'));
+const UploadSection = lazy(() => import('./components/UploadSection'));
+const ProfileSection = lazy(() => import('./components/ProfileSection'));
+const AuthPage = lazy(() => import('./components/AuthPage'));
 
-  // State-Based Routing
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+// Protected Route wrapper: redirects unauthenticated users to /login and saves return URL
+function ProtectedRoute({ children, navigateTo, currentPath }) {
+  const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      sessionStorage.setItem('redirect_after_login', currentPath);
+      navigateTo('/login');
+    }
+  }, [isAuthenticated, loading, currentPath, navigateTo]);
+
+  if (loading) {
+    return (
+      <div className="route-loading-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="xai-spinner" style={{ width: '38px', height: '38px' }} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+  return children;
+}
+
+// Public-Only Route wrapper: redirects already logged-in users to /app (or saved return URL)
+function PublicOnlyRoute({ children, navigateTo }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      const redirectUrl = sessionStorage.getItem('redirect_after_login') || '/app';
+      sessionStorage.removeItem('redirect_after_login');
+      navigateTo(redirectUrl);
+    }
+  }, [isAuthenticated, loading, navigateTo]);
+
+  if (loading) {
+    return (
+      <div className="route-loading-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="xai-spinner" style={{ width: '38px', height: '38px' }} />
+      </div>
+    );
+  }
+
+  if (isAuthenticated) return null;
+  return children;
+}
+
+// 404 Not Found View
+function NotFoundPage({ navigateTo }) {
+  return (
+    <section className="auth-page-section">
+      <div className="section-inner">
+        <div className="auth-card drop-zone" style={{ cursor: 'default', textAlign: 'center', maxWidth: '520px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--gold)', marginBottom: '0.4rem', lineHeight: 1 }}>404</h2>
+          <h3 className="auth-title" style={{ marginBottom: '0.8rem' }}>Page Not Found</h3>
+          <p className="auth-subtitle" style={{ marginBottom: '1.8rem', color: 'var(--text-secondary)' }}>
+            The page you're looking for doesn't exist or has been relocated.
+          </p>
+          <button className="btn-primary" onClick={() => navigateTo('/')}>
+            Back to Home
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Landing Page Flow: Hero + About + Stats + Features
+function LandingPage({ navigateTo, token }) {
+  return (
+    <div className="landing-page-flow">
+      <HeroSection token={token} navigateTo={navigateTo} />
+      <AboutSection />
+      <StatsSection />
+      <Suspense fallback={<div className="loading-placeholder" style={{ minHeight: '300px' }} />}>
+        <FeaturesSection />
+      </Suspense>
+    </div>
+  );
+}
+
+function AppContent() {
+  const { user, token, isAuthenticated, loading, login, logout } = useAuth();
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname || '/');
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
     const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname);
+      setCurrentPath(window.location.pathname || '/');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     };
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  // Toggle tubecursor visibility (Landing page only when not logged in)
+  // Control tubes cursor visibility (Active on Home page)
   useEffect(() => {
     const wrap = document.getElementById('tubes-wrap');
     if (wrap) {
-      if (currentPath === '/' && !token) {
+      if (currentPath === '/') {
         wrap.style.display = 'block';
       } else {
         wrap.style.display = 'none';
       }
     }
-  }, [currentPath, token]);
+  }, [currentPath]);
 
   const navigateTo = (path) => {
-    window.history.pushState({}, '', path);
-    setCurrentPath(path);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-    navigateTo('/');
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+      setCurrentPath(path);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleLoginSuccess = (newToken, newUser) => {
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
+    login(newToken, newUser);
+    const redirectUrl = sessionStorage.getItem('redirect_after_login') || '/app';
+    sessionStorage.removeItem('redirect_after_login');
+    navigateTo(redirectUrl);
+  };
+
+  const handleLogout = async () => {
+    await logout();
     navigateTo('/');
   };
 
-  // Render components based on current route
+  // Route resolver
   const renderContent = () => {
     switch (currentPath) {
-      case '/profile':
-        if (!token) {
-          // Redirect to login if not authenticated
-          setTimeout(() => navigateTo('/login'), 0);
-          return null;
-        }
+      case '/':
+        return <LandingPage navigateTo={navigateTo} token={token} />;
+
+      case '/app':
+      case '/detect':
+      case '/results':
         return (
-          <ProfileSection 
-            token={token} 
-            user={user} 
-            handleLogout={handleLogout} 
-            navigateTo={navigateTo} 
-          />
+          <ProtectedRoute navigateTo={navigateTo} currentPath={currentPath}>
+            <Suspense fallback={<div className="route-loading-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="xai-spinner" /></div>}>
+              <UploadSection token={token} user={user} handleLogout={handleLogout} />
+            </Suspense>
+          </ProtectedRoute>
+        );
+
+      case '/profile':
+      case '/history':
+        return (
+          <ProtectedRoute navigateTo={navigateTo} currentPath={currentPath}>
+            <Suspense fallback={<div className="route-loading-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="xai-spinner" /></div>}>
+              <ProfileSection 
+                token={token} 
+                user={user} 
+                handleLogout={handleLogout} 
+                navigateTo={navigateTo} 
+              />
+            </Suspense>
+          </ProtectedRoute>
         );
 
       case '/login':
         return (
-          <AuthPage 
-            mode="login" 
-            handleLoginSuccess={handleLoginSuccess} 
-            navigateTo={navigateTo} 
-          />
+          <PublicOnlyRoute navigateTo={navigateTo}>
+            <Suspense fallback={<div className="route-loading-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="xai-spinner" /></div>}>
+              <AuthPage 
+                mode="login" 
+                handleLoginSuccess={handleLoginSuccess} 
+                navigateTo={navigateTo} 
+              />
+            </Suspense>
+          </PublicOnlyRoute>
         );
 
       case '/signup':
+      case '/register':
         return (
-          <AuthPage 
-            mode="register" 
-            handleLoginSuccess={handleLoginSuccess} 
-            navigateTo={navigateTo} 
-          />
+          <PublicOnlyRoute navigateTo={navigateTo}>
+            <Suspense fallback={<div className="route-loading-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="xai-spinner" /></div>}>
+              <AuthPage 
+                mode="register" 
+                handleLoginSuccess={handleLoginSuccess} 
+                navigateTo={navigateTo} 
+              />
+            </Suspense>
+          </PublicOnlyRoute>
         );
-      case '/why-us':
-        return <FeaturesSection />;
 
-      case '/':
-      default:
+      case '/why-us':
+      case '/features':
         return (
-          <div className="relative overflow-hidden" style={{ position: "relative", overflow: "hidden" }}>
-            <LightRays count={6} opacity={0.5} speed={16} />
-            <div className="relative z-10" style={{ position: "relative", zIndex: 10 }}>
-              {token && (
-                <UploadSection token={token} user={user} handleLogout={handleLogout} />
-              )}
-              {!token && <HeroSection token={token} navigateTo={navigateTo} />}
-            </div>
-          </div>
+          <Suspense fallback={<div className="route-loading-container" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="xai-spinner" /></div>}>
+            <FeaturesSection />
+          </Suspense>
         );
+
+      default:
+        return <NotFoundPage navigateTo={navigateTo} />;
     }
   };
 
   return (
     <>
+      {/* Global Background Layer covering whole viewport mounted ONCE */}
+      <LightRays
+        count={10}
+        color="rgba(65, 242, 255, 0.55)"
+        blur={32}
+        speed={10}
+        length="120vh"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
+
       <Navbar 
         token={token} 
         user={user} 
@@ -135,10 +240,30 @@ export default function App() {
         currentPath={currentPath} 
         handleLogout={handleLogout} 
       />
+
       <main className="main-content-wrapper">
-        {renderContent()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPath}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
       </main>
+
       <Footer navigateTo={navigateTo} />
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

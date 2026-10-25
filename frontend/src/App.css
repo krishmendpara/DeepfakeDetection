@@ -14,16 +14,16 @@ nav, header {
   z-index: 10;
 }
 
-/* Every page section sits above z-index: 0 fixed canvas */
+/* Every page section sits above fixed background layers */
 main {
   flex: 1;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 footer {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 /* Hero section needs transparent bg so the 3D canvas shows through */

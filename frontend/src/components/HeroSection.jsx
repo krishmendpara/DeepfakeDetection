@@ -41,7 +41,7 @@ export default function HeroSection({ token, navigateTo }) {
             className="hero-cta-btn"
             onClick={() => {
               if (token) {
-                document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth' });
+                navigateTo('/app');
               } else {
                 navigateTo('/login');
               }

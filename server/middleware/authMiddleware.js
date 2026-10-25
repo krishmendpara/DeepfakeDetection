@@ -8,9 +8,15 @@ const protect = async (req, res, next) => {
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.headers.cookie) {
+    const match = req.headers.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+    if (match) token = match[1];
+  }
+
+  if (token) {
     try {
-      token = req.headers.authorization.split(' ')[1];
-      if (!token || token === 'null' || token === 'undefined') {
+      if (token === 'null' || token === 'undefined') {
         return res.status(401).json({ message: 'Not authorized, invalid token format' });
       }
       const decoded = jwt.verify(token, process.env.JWT_SECRET);

@@ -1,0 +1,28 @@
+# Database & Cache
+mongodb_data/
+*.log
+
+# Dependencies & Environments
+node_modules/
+venv/
+.venv/
+__pycache__/
+
+# Secrets & Configs
+.env
+.env.local
+
+# ML Models & Datasets (if you have heavy weights in backend/server)
+*.pth
+*.pt
+*.h5
+*.onnx
+*.pkl
+
+# Ignore model weight files
+*.pt
+*.pth
+
+# Uploads & Build
+server/uploads/*
+dist/

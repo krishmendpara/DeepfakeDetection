@@ -85,10 +85,17 @@ export function LightRays({
   const cycleDuration = Math.max(speed, 0.1);
 
   useEffect(() => {
-    setRays(createRays(count, cycleDuration));
+    let mounted = true;
+    if (mounted) {
+      setRays(createRays(count, cycleDuration));
+    }
+    return () => {
+      mounted = false;
+    };
   }, [count, cycleDuration]);
 
-  const combinedClass = "pointer-events-none absolute inset-0 isolate overflow-hidden rounded-[inherit] " + (className || "");
+  const posClass = style?.position === "fixed" ? "fixed" : "absolute";
+  const combinedClass = `pointer-events-none ${posClass} inset-0 isolate overflow-hidden rounded-[inherit] ` + (className || "");
 
   return (
     <div
@@ -98,7 +105,7 @@ export function LightRays({
         "--light-rays-color": color,
         "--light-rays-blur": `${blur}px`,
         "--light-rays-length": length,
-        position: "absolute",
+        position: style?.position || "absolute",
         inset: 0,
         overflow: "hidden",
         pointerEvents: "none",
@@ -107,6 +114,18 @@ export function LightRays({
       {...props}
     >
       <div className="absolute inset-0 overflow-hidden" style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        {/* Top-center origin radial glow */}
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-70"
+          style={{
+            position: "absolute",
+            inset: 0,
+            opacity: 0.7,
+            background:
+              "radial-gradient(ellipse 70% 45% at 50% 0%, color-mix(in srgb, var(--light-rays-color) 55%, transparent), transparent 75%)",
+          }}
+        />
         <div
           aria-hidden
           className="absolute inset-0 opacity-60"

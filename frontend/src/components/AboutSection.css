@@ -70,7 +70,7 @@
 
 /* Same glass-card treatment as Stats bento cells */
 .pillar-card {
-    background: rgba(10, 14, 18, 0.7);
+    background: transparent;
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
