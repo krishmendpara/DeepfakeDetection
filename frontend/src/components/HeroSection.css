@@ -81,14 +81,56 @@
   margin: 0 0 2.2rem;
 }
 
-/* Bold glowing accent word — like "Tangible" / "Generated?" on IERTQA */
+/* Refined, desaturated whitish-beige / bone glow for "Generated?" */
 .hero-glow-word {
-  font-weight: 800;
-  color: #e2c47a;
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  letter-spacing: inherit;
+  font-weight: 700;
+  color: #f6f5f1;
+  -webkit-text-stroke-color: #f6f5f1;
   text-shadow:
-    0 0 18px rgba(201, 168, 76, 0.95),
-    0 0 48px rgba(201, 168, 76, 0.55),
-    0 0 85px rgba(201, 168, 76, 0.25);
+    0 0 2px rgba(255, 255, 255, 0.95),
+    0 0 6px rgba(255, 253, 249, 0.75),
+    0 0 14px rgba(246, 244, 238, 0.45),
+    0 0 28px rgba(238, 235, 228, 0.22),
+    0 0 46px rgba(230, 227, 220, 0.10);
+  filter: drop-shadow(0 0 12px rgba(250, 248, 244, 0.20));
+  animation: realisticBeigeGlow 4.5s ease-in-out infinite alternate;
+  will-change: filter, text-shadow;
+  transition: filter 0.3s ease;
+}
+
+.hero-glow-word:hover {
+  filter: drop-shadow(0 0 16px rgba(255, 253, 248, 0.35));
+}
+
+@keyframes realisticBeigeGlow {
+  0% {
+    text-shadow:
+      0 0 2px rgba(255, 255, 255, 0.95),
+      0 0 6px rgba(255, 253, 249, 0.70),
+      0 0 14px rgba(246, 244, 238, 0.40),
+      0 0 26px rgba(238, 235, 228, 0.18),
+      0 0 42px rgba(230, 227, 220, 0.08);
+    filter: drop-shadow(0 0 10px rgba(250, 248, 244, 0.15));
+  }
+  100% {
+    text-shadow:
+      0 0 2px rgba(255, 255, 255, 1),
+      0 0 8px rgba(255, 254, 250, 0.82),
+      0 0 18px rgba(248, 245, 240, 0.50),
+      0 0 32px rgba(240, 237, 230, 0.26),
+      0 0 52px rgba(232, 229, 222, 0.12);
+    filter: drop-shadow(0 0 14px rgba(250, 248, 244, 0.25));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow-word {
+    animation: none;
+  }
 }
 
 /* ── CTA button — IERTQA glass-pill style ── */
