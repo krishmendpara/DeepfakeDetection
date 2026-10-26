@@ -214,7 +214,7 @@ function AppContent() {
       {/* Optimized Global Ambient Light Rays Layer */}
       <LightRays
         count={5}
-        color="rgba(239, 194, 127, 0.35)"
+        color="rgba(235, 205, 158, 0.35)"
         blur={18}
         speed={16}
         length="100vh"
