@@ -35,7 +35,7 @@ export default function UploadSection({ token }) {
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = 'http://localhost:5001/api';
 
   useEffect(() => {
     if (!file) {

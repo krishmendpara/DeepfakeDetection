@@ -14,7 +14,7 @@ export default function AuthPage({ mode = 'login', handleLoginSuccess, navigateT
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = 'http://localhost:5001/api';
 
   const handleSubmit = async (e) => {
     e.preventDefault();

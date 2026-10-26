@@ -23,7 +23,7 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
   const [filterClassification, setFilterClassification] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = 'http://localhost:5001/api';
 
   const fetchHistory = useCallback(async () => {
     if (!token) return;
