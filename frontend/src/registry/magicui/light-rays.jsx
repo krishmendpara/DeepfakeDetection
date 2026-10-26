@@ -46,12 +46,13 @@ const Ray = ({
         height: "var(--light-rays-length)",
         width: "var(--ray-width)",
         transformOrigin: "top",
-        transform: "translateX(-50%)",
+        transform: "translate3d(-50%, 0, 0)",
         borderRadius: "9999px",
         background: "linear-gradient(to bottom, color-mix(in srgb, var(--light-rays-color) 70%, transparent), transparent)",
         opacity: 0,
         mixBlendMode: "screen",
         filter: "blur(var(--light-rays-blur))",
+        willChange: "transform, opacity",
         pointerEvents: "none"
       }}
       initial={{ rotate: rotate }}

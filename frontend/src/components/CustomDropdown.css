@@ -1,0 +1,292 @@
+/* Custom Filter Dropdown Styling - Matches PixelTruth Glassmorphism Design System */
+
+.custom-dropdown-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 190px;
+}
+
+.custom-dropdown-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+/* Trigger Button */
+.custom-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px; /* Touch friendly standard */
+  padding: 0.55rem 1rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition), background-color var(--transition);
+  user-select: none;
+}
+
+.custom-dropdown-trigger:hover {
+  border-color: rgba(201, 168, 76, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.custom-dropdown-trigger:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.3), 0 0 16px rgba(201, 168, 76, 0.2);
+}
+
+.custom-dropdown-container.is-open .custom-dropdown-trigger {
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.08);
+  box-shadow: 0 0 0 1px var(--gold), 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Active Filter Highlight State */
+.custom-dropdown-container.has-active-filter .custom-dropdown-trigger {
+  border-color: rgba(201, 168, 76, 0.45);
+  background: rgba(201, 168, 76, 0.05);
+}
+
+.trigger-left-content {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trigger-icon {
+  font-size: 1.05rem;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.trigger-selected-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.trigger-right-content {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.active-filter-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+  display: inline-block;
+  animation: pulseGoldDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseGoldDot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+    box-shadow: 0 0 12px var(--gold);
+  }
+}
+
+.trigger-chevron {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trigger-chevron.rotated {
+  transform: rotate(180deg);
+  color: var(--gold);
+}
+
+/* Dropdown Panel */
+.custom-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  min-width: 220px;
+  max-width: 320px;
+  background: rgba(10, 18, 17, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 168, 76, 0.22);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 20px rgba(201, 168, 76, 0.08);
+  z-index: 60; /* Above table, cards and light rays */
+  overflow: hidden;
+  transform-origin: top center;
+}
+
+.custom-dropdown-panel.flip-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+  transform-origin: bottom center;
+}
+
+.custom-dropdown-options-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.4rem;
+}
+
+/* Options */
+.custom-dropdown-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0.6rem 0.85rem;
+  border-radius: calc(var(--radius) - 4px);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.custom-dropdown-option:hover,
+.custom-dropdown-option.highlighted {
+  background: rgba(201, 168, 76, 0.12);
+  color: #fff;
+}
+
+.custom-dropdown-option.selected {
+  background: rgba(201, 168, 76, 0.18);
+  color: var(--gold-light);
+  font-weight: 600;
+}
+
+.option-content-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.option-text {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.custom-dropdown-option.selected .option-text {
+  color: var(--gold-light);
+}
+
+.option-content-right {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.option-count-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.48rem;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.option-count-badge.badge-fake {
+  background: rgba(255, 80, 80, 0.12);
+  color: #ff7b7b;
+  border-color: rgba(255, 80, 80, 0.25);
+}
+
+.option-count-badge.badge-real {
+  background: rgba(26, 143, 122, 0.15);
+  color: var(--teal-light);
+  border-color: rgba(26, 143, 122, 0.25);
+}
+
+.option-check-wrap {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.option-check-icon {
+  font-size: 1.05rem;
+  color: var(--gold);
+}
+
+/* Clear Filters Button */
+.btn-clear-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.95rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(201, 168, 76, 0.35);
+  border-radius: 99px;
+  color: var(--gold-light);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  align-self: flex-end;
+  height: 44px;
+}
+
+.btn-clear-filters:hover {
+  background: rgba(201, 168, 76, 0.14);
+  border-color: var(--gold);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-clear-filters .clear-icon {
+  font-size: 0.95rem;
+  transition: transform 0.3s ease;
+}
+
+.btn-clear-filters:hover .clear-icon {
+  transform: rotate(-90deg);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .active-filter-indicator-dot {
+    animation: none;
+  }
+  .trigger-chevron {
+    transition: none;
+  }
+}
+
+/* Mobile responsive layout */
+@media (max-width: 680px) {
+  .custom-dropdown-container {
+    width: 100%;
+    min-width: 0;
+  }
+  .custom-dropdown-panel {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}

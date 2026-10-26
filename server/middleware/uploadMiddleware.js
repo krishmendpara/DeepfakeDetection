@@ -1,38 +1,36 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename(req, file, cb) {
-    cb(
-      null,
-      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-    );
-  },
-});
+// In-memory storage: do NOT save uploaded files to local disk (server/uploads)
+const storage = multer.memoryStorage();
 
 function checkFileType(file, cb) {
-  const filetypes = /jpg|jpeg|png|webp|heic/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  // Some browsers upload webp/heic as application/octet-stream or similar, so check extname or mimetype
-  if (extname) {
+  const allowedExtensions = /jpg|jpeg|png|webp/;
+  const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+  const mime = (file.mimetype || '').toLowerCase();
+
+  const isExtValid = allowedExtensions.test(ext);
+  const isMimeValid =
+    mime === 'image/jpeg' ||
+    mime === 'image/jpg' ||
+    mime === 'image/png' ||
+    mime === 'image/webp' ||
+    mime.startsWith('image/');
+
+  if (isExtValid && isMimeValid) {
     return cb(null, true);
-  } else {
-    cb(new Error('Unsupported file format. Images only!'));
   }
+
+  const err = new Error('Invalid file format. Only JPG, JPEG, PNG, and WEBP image files are allowed.');
+  err.code = 'INVALID_FILE_TYPE';
+  return cb(err);
 }
 
 const upload = multer({
   storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB maximum limit
+  },
   fileFilter(req, file, cb) {
     checkFileType(file, cb);
   },

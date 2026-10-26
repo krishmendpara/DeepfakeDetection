@@ -1,0 +1,21 @@
+/* Neon Tubes 3D Cursor Trail Wrapper */
+
+.neon-tubes-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+  will-change: opacity, visibility;
+}
+
+.neon-tubes-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}

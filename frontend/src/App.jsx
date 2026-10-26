@@ -9,7 +9,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import './App.css';
 
-// Lazy-loaded routes for performance & modularity
+// Lazy-loaded routes and heavy visual modules for performance & modularity
+const NeonTubesTrail = lazy(() => import('./components/NeonTubesTrail'));
 const FeaturesSection = lazy(() => import('./components/FeaturesSection'));
 const UploadSection = lazy(() => import('./components/UploadSection'));
 const ProfileSection = lazy(() => import('./components/ProfileSection'));
@@ -38,15 +39,14 @@ function ProtectedRoute({ children, navigateTo, currentPath }) {
   return children;
 }
 
-// Public-Only Route wrapper: redirects already logged-in users to /app (or saved return URL)
+// Public-Only Route wrapper: redirects already logged-in users to / (Home)
 function PublicOnlyRoute({ children, navigateTo }) {
   const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      const redirectUrl = sessionStorage.getItem('redirect_after_login') || '/app';
       sessionStorage.removeItem('redirect_after_login');
-      navigateTo(redirectUrl);
+      navigateTo('/');
     }
   }, [isAuthenticated, loading, navigateTo]);
 
@@ -110,18 +110,6 @@ function AppContent() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  // Control tubes cursor visibility (Active on Home page)
-  useEffect(() => {
-    const wrap = document.getElementById('tubes-wrap');
-    if (wrap) {
-      if (currentPath === '/') {
-        wrap.style.display = 'block';
-      } else {
-        wrap.style.display = 'none';
-      }
-    }
-  }, [currentPath]);
-
   const navigateTo = (path) => {
     if (window.location.pathname !== path) {
       window.history.pushState({}, '', path);
@@ -132,7 +120,7 @@ function AppContent() {
 
   const handleLoginSuccess = (newToken, newUser) => {
     login(newToken, newUser);
-    const redirectUrl = sessionStorage.getItem('redirect_after_login') || '/app';
+    const redirectUrl = sessionStorage.getItem('redirect_after_login') || '/';
     sessionStorage.removeItem('redirect_after_login');
     navigateTo(redirectUrl);
   };
@@ -216,13 +204,20 @@ function AppContent() {
 
   return (
     <>
-      {/* Global Background Layer covering whole viewport mounted ONCE */}
+      {/* High-Performance 3D Neon Tubes Cursor Trail (Clean lifecycle, 0% CPU on scroll) */}
+      {currentPath === '/' && (
+        <Suspense fallback={null}>
+          <NeonTubesTrail />
+        </Suspense>
+      )}
+
+      {/* Optimized Global Ambient Light Rays Layer */}
       <LightRays
-        count={10}
-        color="rgba(65, 242, 255, 0.55)"
-        blur={32}
-        speed={10}
-        length="120vh"
+        count={5}
+        color="rgba(239, 194, 127, 0.35)"
+        blur={18}
+        speed={16}
+        length="100vh"
         style={{
           position: 'fixed',
           inset: 0,

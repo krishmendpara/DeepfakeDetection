@@ -1,20 +1,20 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
+  const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
   try {
-    const mongoUrl = process.env.MONGO_URL;
     console.log('Connecting to database...');
-    const conn = await mongoose.connect(mongoUrl, {
+    const conn = await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 4000, // 4 seconds timeout
+      serverSelectionTimeoutMS: 5000,
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Database connection to Atlas failed: ${error.message}`);
     console.log('Falling back to local MongoDB database (mongodb://127.0.0.1:27017/ipdProject)...');
     try {
-      const localUrl = 'mongodb://127.0.0.1:27017/ipdProject';
+      const localUrl = process.env.LOCAL_MONGO_URI || 'mongodb://127.0.0.1:27017/ipdProject';
       const conn = await mongoose.connect(localUrl, {
         useNewUrlParser: true,
         useUnifiedTopology: true,

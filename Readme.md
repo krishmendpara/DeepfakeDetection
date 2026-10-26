@@ -126,11 +126,71 @@ Visit the application in your browser at `http://localhost:5173`.
 
 ---
 
-## Configuration (`server/.env`)
+## Persistent Remote Storage & Cross-Device Access (Step F)
 
-The Express backend configures connection credentials through `server/.env`:
-*   `PORT=5000`
-*   `MONGO_URL=mongodb+srv://krishmendpara4:krish3329@atlasclustertest.rjcrnb7.mongodb.net/ipdProject`
-*   `JWT_SECRET=supersecretkeyjwt12345`
-*   `ML_SERVICE_URL=http://localhost:8000/predict`
-*   `XAI_CHECKPOINT_PATH` *(optional)*: Override path to `best_final_model.pt` if stored in a custom directory.
+The system supports cross-device persistence: all uploads, analysis history, heatmaps, and crops are stored remotely in cloud storage and MongoDB Atlas, accessible from any device upon login.
+
+### 1. MongoDB Atlas Setup Guide
+1. **Create Free Tier Cluster**:
+   - Sign up / log in to [MongoDB Atlas](https://www.mongodb.com/atlas).
+   - Create an M0 Free Tier Shared Cluster (select your preferred cloud provider and region).
+2. **Create Database User**:
+   - Under **Security** -> **Database Access**, click **Add New Database User**.
+   - Choose Password authentication, enter a username and strong password, and assign **Read and write to any database** privilege.
+3. **Configure Network Access**:
+   - Under **Security** -> **Network Access**, click **Add IP Address**.
+   - Add `0.0.0.0/0` (Allow Access from Anywhere) for seamless cross-device testing, or add your specific IP address.
+4. **Get Connection String**:
+   - In **Databases**, click **Connect** -> **Drivers** (Node.js).
+   - Copy the SRV connection URI: `mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority`.
+   - Paste into `server/.env` as `MONGO_URI`.
+
+### 2. One-Time Data Migration Script
+To copy existing scan history, users, and metadata from your local database (`mongodb_data` / local mongod) to MongoDB Atlas without creating duplicates:
+```bash
+node server/utils/migrateLocalData.js
+```
+The script uses idempotent upserts (`upsert: true`), making it completely safe to re-run at any time.
+
+### 3. Remote Image Storage: Cloudinary with MongoDB GridFS Fallback
+The backend uses in-memory file buffers (`multer.memoryStorage()`) and never relies on local disk storage (`server/uploads/`):
+* **Cloudinary (Recommended)**: Images, heatmaps, and face crops are uploaded to Cloudinary's global CDN. URLs (`https://res.cloudinary.com/...`) are stored in MongoDB.
+  - Keeps the MongoDB Atlas 512 MB free tier quota from exhausting.
+  - Fast, global CDN delivery to all devices.
+* **MongoDB GridFS (Automatic Fallback)**: If Cloudinary credentials are not provided in `.env`, the server automatically streams binary image chunks into MongoDB Atlas via GridFS and serves them through `/api/media/:id`.
+
+### 4. Cross-Device & LAN Deployment
+To access the app from another laptop, tablet, or phone on the same local network:
+1. **Find Host Laptop's Local IP**:
+   - On Windows: run `ipconfig` (e.g. `192.168.1.50`).
+2. **Configure Frontend**:
+   - In `frontend/.env`:
+     ```env
+     VITE_API_URL=http://192.168.1.50:5001/api
+     ```
+3. **Configure Server CORS**:
+   - In `server/.env`:
+     ```env
+     CLIENT_URL=http://localhost:5173,http://192.168.1.50:5173
+     ```
+4. **Run Services**:
+   - On host laptop, run `npm run dev -- --host` inside `frontend`.
+   - On the second device, open `http://192.168.1.50:5173` in any browser. All scans, login sessions, and history will sync in real time!
+
+---
+
+## Configuration Reference
+
+### Server Environment (`server/.env` / `server/.env.example`)
+* `PORT`: Express server listening port (default: `5001`).
+* `MONGO_URI`: MongoDB Atlas connection string (or local fallback).
+* `JWT_SECRET`: Secret key for signing and verifying JWT tokens.
+* `ML_SERVICE_URL`: URL to the FastAPI inference microservice (`http://localhost:8000/predict`).
+* `CLIENT_URL`: Allowed CORS origin(s) separated by commas (e.g. `http://localhost:5173,http://192.168.1.50:5173`).
+* `CLOUDINARY_CLOUD_NAME`: *(Optional)* Cloudinary cloud name.
+* `CLOUDINARY_API_KEY`: *(Optional)* Cloudinary API key.
+* `CLOUDINARY_API_SECRET`: *(Optional)* Cloudinary API secret.
+
+### Frontend Environment (`frontend/.env` / `frontend/.env.example`)
+* `VITE_API_URL`: Base API endpoint for backend calls (e.g. `http://localhost:5001/api` or `http://<LAN-IP>:5001/api`).
+

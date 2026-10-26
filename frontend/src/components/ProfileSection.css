@@ -115,14 +115,64 @@
 }
 
 .profile-actions-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
   width: 100%;
+  margin-top: 0.75rem;
 }
 
-.btn-profile-logout {
-  display: flex;
+.btn-profile-primary {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-sm, 10px);
+  background: var(--gold, #c9a84c);
+  color: #0b1313;
+  border: 1px solid var(--gold, #c9a84c);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all var(--transition, 0.2s ease);
+  box-shadow: 0 4px 14px rgba(201, 168, 76, 0.2);
+}
+
+.btn-profile-primary:hover {
+  background: var(--gold-light, #dfc06b);
+  border-color: var(--gold-light, #dfc06b);
+  box-shadow: 0 6px 20px rgba(201, 168, 76, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-profile-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-sm, 10px);
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition, 0.2s ease);
+}
+
+.btn-profile-logout:hover {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.06);
+  border-color: rgba(255, 107, 107, 0.25);
+}
+
+.btn-action-icon {
+  font-size: 1.05rem;
 }
 
 /* History Column Right styling */
@@ -168,6 +218,16 @@
   border-radius: 99px;
   font-size: 0.78rem;
   font-weight: 600;
+}
+
+.history-controls-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 25;
 }
 
 .history-status-state {
@@ -520,8 +580,8 @@
 
 /* Delete Button */
 .btn-delete-record {
-  background: rgba(255, 80, 80, 0.1);
-  border: 1px solid rgba(255, 80, 80, 0.25);
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 80, 80, 0.2);
   color: #ff6b6b;
   padding: 0.65rem 1.2rem;
   border-radius: 8px;
@@ -532,14 +592,14 @@
   justify-content: center;
   gap: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition, 0.2s ease);
   width: 100%;
 }
 
 .btn-delete-record:hover {
-  background: rgba(255, 80, 80, 0.2);
-  border-color: rgba(255, 80, 80, 0.45);
-  box-shadow: 0 0 15px rgba(255, 80, 80, 0.1);
+  background: rgba(255, 80, 80, 0.15);
+  border-color: rgba(255, 80, 80, 0.35);
+  color: #ff5252;
 }
 
 .profile-card-left-wrapper {
@@ -550,3 +610,148 @@
   width: 100%;
   border-radius: var(--radius-xl) !important;
 }
+
+/* Minimal History Selection & Delete Action Styling */
+.history-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.85rem;
+  margin-bottom: 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.82rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.selection-info strong {
+  color: var(--text-primary, #ffffff);
+  font-weight: 600;
+}
+
+.btn-selection-toggle {
+  background: none;
+  border: none;
+  color: var(--gold, #c9a84c);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition, 0.2s ease);
+}
+
+.btn-selection-toggle:hover {
+  color: var(--gold-light, #dfc06b);
+}
+
+.selection-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.btn-selection-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 80, 80, 0.2);
+  color: #ff7b7b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition, 0.2s ease);
+}
+
+.btn-selection-delete:hover:not(:disabled) {
+  background: rgba(255, 80, 80, 0.18);
+  border-color: rgba(255, 80, 80, 0.35);
+  color: #ff5252;
+}
+
+.btn-selection-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-selection-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted, #64748b);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: color var(--transition, 0.2s ease);
+}
+
+.btn-selection-clear:hover {
+  color: var(--text-primary, #ffffff);
+}
+
+/* Subtle Checkbox Design */
+.checkbox-cell {
+  width: 36px;
+  text-align: center;
+  padding-left: 0.75rem !important;
+  padding-right: 0.25rem !important;
+}
+
+.history-select-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  margin: 0;
+  vertical-align: middle;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.history-select-checkbox:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.history-select-checkbox:checked,
+.history-select-checkbox:indeterminate {
+  background: var(--gold, #c9a84c);
+  border-color: var(--gold, #c9a84c);
+}
+
+.history-select-checkbox:checked::before {
+  content: "";
+  width: 8px;
+  height: 4px;
+  border-left: 1.8px solid #050a0a;
+  border-bottom: 1.8px solid #050a0a;
+  transform: rotate(-45deg) translate(0.5px, -0.5px);
+}
+
+.history-select-checkbox:indeterminate::before {
+  content: "";
+  width: 8px;
+  height: 2px;
+  background: #050a0a;
+  border-radius: 1px;
+}
+
+/* Selected row highlight (subtle, blends naturally) */
+.history-table-row.is-selected {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.history-table-row.is-selected:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+

@@ -35,7 +35,7 @@ export default function UploadSection({ token }) {
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
 
-  const API_URL = 'http://localhost:5001/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
   useEffect(() => {
     if (!file) {
@@ -48,6 +48,17 @@ export default function UploadSection({ token }) {
       URL.revokeObjectURL(url);
     };
   }, [file]);
+
+  // Clear in-memory state on logout
+  useEffect(() => {
+    if (!token) {
+      setFile(null);
+      setPreviewUrl('');
+      setPrediction(null);
+      setError('');
+      setCameraActive(false);
+    }
+  }, [token]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {

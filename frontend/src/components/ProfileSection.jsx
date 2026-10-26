@@ -7,10 +7,14 @@ import {
   RiShieldCheckLine, 
   RiErrorWarningLine,
   RiArrowRightSLine,
-  RiDeleteBinLine
+  RiDeleteBinLine,
+  RiFilter3Line,
+  RiArrowUpDownLine,
+  RiRefreshLine
 } from 'react-icons/ri';
 import SpotlightCard from './SpotlightCard';
 import ExplainabilityCard from './ExplainabilityCard';
+import CustomDropdown from './CustomDropdown';
 import './ProfileSection.css';
 
 export default function ProfileSection({ token, user, handleLogout, navigateTo }) {
@@ -18,26 +22,38 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedScan, setSelectedScan] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
 
   // Sorting and Filtering States
   const [filterClassification, setFilterClassification] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  const API_URL = 'http://localhost:5001/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
+  // Helper to reliably resolve image source across Cloudinary CDN, GridFS, and legacy paths
+  const getImageSrc = useCallback((url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    const baseOrigin = API_URL.replace(/\/api\/?$/, '');
+    return `${baseOrigin}${url.startsWith('/') ? '' : '/'}${url}`;
+  }, [API_URL]);
 
   const fetchHistory = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/prediction/history`, {
+      const res = await fetch(`${API_URL}/history`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       if (res.ok) {
         const data = await res.json();
-        setHistory(data);
+        setHistory(Array.isArray(data) ? data : []);
       } else {
         throw new Error('Failed to load scan history');
       }
@@ -47,7 +63,7 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, API_URL]);
 
   useEffect(() => {
     fetchHistory();
@@ -56,7 +72,7 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
   const handleDeleteScan = async (scanId) => {
     if (!window.confirm("Are you sure you want to delete this scan entry?")) return;
     try {
-      const res = await fetch(`${API_URL}/prediction/${scanId}`, {
+      const res = await fetch(`${API_URL}/history/${scanId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -64,7 +80,17 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
       });
       if (res.ok) {
         setHistory(prev => prev.filter(item => item._id !== scanId));
-        setSelectedScan(null);
+        if (selectedScan && selectedScan._id === scanId) {
+          setSelectedScan(null);
+        }
+        setSelectedIds(prev => {
+          if (prev.has(scanId)) {
+            const next = new Set(prev);
+            next.delete(scanId);
+            return next;
+          }
+          return prev;
+        });
       } else {
         alert('Failed to delete the scan entry.');
       }
@@ -73,6 +99,34 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
       alert('Error connecting to server.');
     }
   };
+
+  const handleResetFilters = () => {
+    setFilterClassification('all');
+    setSortBy('newest');
+  };
+
+  const isFilterActive = filterClassification !== 'all' || sortBy !== 'newest';
+
+  // Filter options with live counts calculated from user history
+  const filterOptions = useMemo(() => {
+    const allCount = history.length;
+    const fakeCount = history.filter(item => item.result === 'fake').length;
+    const realCount = history.filter(item => item.result === 'real').length;
+
+    return [
+      { value: 'all', label: 'All Predictions', count: allCount },
+      { value: 'fake', label: 'AI-Generated', count: fakeCount, badgeClass: 'badge-fake' },
+      { value: 'real', label: 'Likely Real', count: realCount, badgeClass: 'badge-real' },
+    ];
+  }, [history]);
+
+  // Sort options
+  const sortOptions = useMemo(() => [
+    { value: 'newest', label: 'Newest First' },
+    { value: 'oldest', label: 'Oldest First' },
+    { value: 'confidence-high', label: 'Confidence: High to Low' },
+    { value: 'confidence-low', label: 'Confidence: Low to High' },
+  ], []);
 
   // Filter and Sort Logic
   const filteredAndSortedHistory = useMemo(() => {
@@ -94,6 +148,73 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
 
     return result;
   }, [history, filterClassification, sortBy]);
+
+  // Multi-select & Batch Delete Logic
+  const allVisibleIds = useMemo(() => filteredAndSortedHistory.map(s => s._id), [filteredAndSortedHistory]);
+  const isAllSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedIds.has(id));
+  const isSomeSelected = allVisibleIds.some(id => selectedIds.has(id)) && !isAllSelected;
+
+  const handleToggleSelect = (id, e) => {
+    e?.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleSelectAll = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (isAllSelected) {
+        allVisibleIds.forEach(id => next.delete(id));
+      } else {
+        allVisibleIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleBatchDelete = async () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${count} selected ${count > 1 ? 'scans' : 'scan'}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsBatchDeleting(true);
+    try {
+      const idsToDelete = Array.from(selectedIds);
+      const res = await fetch(`${API_URL}/history/batch`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: idsToDelete })
+      });
+
+      if (res.ok) {
+        setHistory(prev => prev.filter(item => !selectedIds.has(item._id)));
+        if (selectedScan && selectedIds.has(selectedScan._id)) {
+          setSelectedScan(null);
+        }
+        setSelectedIds(new Set());
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.message || 'Failed to delete selected scans.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error while deleting selected scans.');
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
 
   return (
     <section className="profile-section">
@@ -130,11 +251,11 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
               </div>
 
               <div className="profile-actions-panel">
-                <button className="btn-primary" onClick={() => navigateTo('/')} style={{ width: '100%', marginBottom: '0.8rem' }}>
-                  Go to Analyzer
+                <button className="btn-profile-primary" onClick={() => navigateTo('/app')}>
+                  <RiShieldCheckLine className="btn-action-icon" /> Go to Analyzer
                 </button>
-                <button className="btn-ghost btn-profile-logout" onClick={handleLogout} style={{ width: '100%' }}>
-                  <RiLogoutBoxRLine /> Sign Out
+                <button className="btn-profile-logout" onClick={handleLogout}>
+                  <RiLogoutBoxRLine className="btn-action-icon" /> Sign Out
                 </button>
               </div>
             </SpotlightCard>
@@ -149,35 +270,39 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
               <span className="history-count-badge">{filteredAndSortedHistory.length} scans</span>
             </div>
 
-            {/* Filter and Sort Control Bar */}
+            {/* Custom Filter and Sort Control Bar (Step G: Replaces plain native select) */}
             {history.length > 0 && (
               <div className="history-controls-bar">
-                <div className="control-group">
-                  <label htmlFor="filter-class">Filter:</label>
-                  <select 
-                    id="filter-class"
-                    value={filterClassification} 
-                    onChange={e => setFilterClassification(e.target.value)}
-                  >
-                    <option value="all">All Predictions</option>
-                    <option value="fake">AI-Generated</option>
-                    <option value="real">Likely Real</option>
-                  </select>
-                </div>
+                <CustomDropdown
+                  id="filter-class"
+                  label="Filter"
+                  icon={RiFilter3Line}
+                  value={filterClassification}
+                  options={filterOptions}
+                  onChange={setFilterClassification}
+                  hasActiveFilter={filterClassification !== 'all'}
+                />
 
-                <div className="control-group">
-                  <label htmlFor="sort-by">Sort:</label>
-                  <select 
-                    id="sort-by"
-                    value={sortBy} 
-                    onChange={e => setSortBy(e.target.value)}
+                <CustomDropdown
+                  id="sort-by"
+                  label="Sort By"
+                  icon={RiArrowUpDownLine}
+                  value={sortBy}
+                  options={sortOptions}
+                  onChange={setSortBy}
+                  hasActiveFilter={sortBy !== 'newest'}
+                />
+
+                {isFilterActive && (
+                  <button
+                    type="button"
+                    className="btn-clear-filters"
+                    onClick={handleResetFilters}
+                    title="Reset all filters and sorting"
                   >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="confidence-high">Confidence: High to Low</option>
-                    <option value="confidence-low">Confidence: Low to High</option>
-                  </select>
-                </div>
+                    <RiRefreshLine className="clear-icon" /> Reset
+                  </button>
+                )}
               </div>
             )}
 
@@ -201,14 +326,61 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
             ) : filteredAndSortedHistory.length === 0 ? (
               <div className="history-status-state empty-state">
                 <RiErrorWarningLine className="empty-icon" />
-                <p>No matches found for your filter/sort query.</p>
+                <p>No analyses found matching your filter criteria.</p>
+                <button className="btn-ghost" onClick={handleResetFilters} style={{ marginTop: '1rem' }}>
+                  <RiRefreshLine /> Clear filters
+                </button>
               </div>
             ) : (
               <div className="history-list-wrapper">
+                {selectedIds.size > 0 && (
+                  <div className="history-selection-bar">
+                    <span className="selection-info">
+                      <strong>{selectedIds.size}</strong> selected
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-selection-toggle"
+                      onClick={handleToggleSelectAll}
+                    >
+                      {isAllSelected ? 'Deselect all' : `Select all (${filteredAndSortedHistory.length})`}
+                    </button>
+                    <div className="selection-bar-actions">
+                      <button
+                        type="button"
+                        className="btn-selection-delete"
+                        onClick={handleBatchDelete}
+                        disabled={isBatchDeleting}
+                        title="Delete selected scans"
+                      >
+                        <RiDeleteBinLine /> {isBatchDeleting ? 'Deleting...' : 'Delete'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-selection-clear"
+                        onClick={() => setSelectedIds(new Set())}
+                        title="Cancel selection"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="history-table-container">
                   <table className="history-table">
                     <thead>
                       <tr>
+                        <th className="checkbox-cell">
+                          <input
+                            type="checkbox"
+                            className="history-select-checkbox"
+                            aria-label="Select all visible scans"
+                            checked={isAllSelected}
+                            ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                            onChange={handleToggleSelectAll}
+                          />
+                        </th>
                         <th>Image</th>
                         <th>Classification</th>
                         <th>Confidence</th>
@@ -217,29 +389,45 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredAndSortedHistory.map((scan) => (
-                        <tr key={scan._id} className="history-table-row" onClick={() => setSelectedScan(scan)}>
-                          <td>
-                            <div className="history-table-thumb-wrap">
-                              <img src={scan.imageUrl} alt="scan preview" className="history-table-thumb" />
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`classification-badge ${scan.result === 'fake' ? 'fake' : 'real'}`}>
-                              {scan.result.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="confidence-cell">
-                            {scan.result === 'fake' ? scan.confidence : (100 - scan.confidence).toFixed(0)}%
-                          </td>
-                          <td className="date-cell">
-                            {new Date(scan.createdAt).toLocaleDateString()} at {new Date(scan.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </td>
-                          <td className="action-cell">
-                            <RiArrowRightSLine className="row-arrow" />
-                          </td>
-                        </tr>
-                      ))}
+                      {filteredAndSortedHistory.map((scan) => {
+                        const isSelected = selectedIds.has(scan._id);
+                        return (
+                          <tr
+                            key={scan._id}
+                            className={`history-table-row ${isSelected ? 'is-selected' : ''}`}
+                            onClick={() => setSelectedScan(scan)}
+                          >
+                            <td className="checkbox-cell" onClick={e => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                className="history-select-checkbox"
+                                aria-label={`Select scan from ${new Date(scan.createdAt).toLocaleDateString()}`}
+                                checked={isSelected}
+                                onChange={(e) => handleToggleSelect(scan._id, e)}
+                              />
+                            </td>
+                            <td>
+                              <div className="history-table-thumb-wrap">
+                                <img src={getImageSrc(scan.imageUrl)} alt="scan preview" className="history-table-thumb" />
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`classification-badge ${scan.result === 'fake' ? 'fake' : 'real'}`}>
+                                {scan.result.toUpperCase()}
+                              </span>
+                            </td>
+                            <td className="confidence-cell">
+                              {scan.result === 'fake' ? scan.confidence : (100 - scan.confidence).toFixed(0)}%
+                            </td>
+                            <td className="date-cell">
+                              {new Date(scan.createdAt).toLocaleDateString()} at {new Date(scan.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="action-cell">
+                              <RiArrowRightSLine className="row-arrow" />
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -258,7 +446,7 @@ export default function ProfileSection({ token, user, handleLogout, navigateTo }
               </div>
               <div className="scan-modal-body">
                 <div className="scan-modal-img-wrap">
-                  <img src={selectedScan.imageUrl} alt="Forensic Target" className="scan-modal-img" />
+                  <img src={getImageSrc(selectedScan.imageUrl)} alt="Forensic Target" className="scan-modal-img" />
                 </div>
                 <div className="scan-modal-details">
                   <div className={`scan-modal-alert ${selectedScan.result === 'fake' ? 'fake' : 'real'}`}>
